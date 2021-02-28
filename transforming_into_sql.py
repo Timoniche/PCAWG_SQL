@@ -19,6 +19,9 @@ def save_to_sql():
     if not engine.has_table('sv_donor'):
         sv_donor = pd.read_csv(csvspath + '/sv_donor.csv')
         sv_donor.to_sql('sv_donor', engine, index=False)
+    if not engine.has_table('sv_intra'):
+        sv_intra = pd.read_csv(csvspath + '/simple_intra_sv.csv')
+        sv_intra.to_sql('sv_intra', engine, index=False)
 
 
 def main():
