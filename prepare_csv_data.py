@@ -42,8 +42,24 @@ def build_sv_with_donor_csv():
     sv_donor_csv.to_csv(csvspath + r'/sv_donor.csv', index=False)
 
 
+def build_simplified_sv():
+    # from .bedpe doc (start, end]
+    projection = ['chrom1', 'end1', 'chrom2', 'end2', 'donor_id']
+    simplified_csv = pd.read_csv(csvspath + '/sv_donor.csv', usecols=projection)
+    simplified_csv.rename(
+        columns={'end1': 'bp1', 'end2': 'bp2'}, inplace=True
+    )
+    simplified_csv.to_csv(csvspath + r'/simple_sv.csv', index=False)
+    intra_sv = simplified_csv[simplified_csv['chrom1'] == simplified_csv['chrom2']]
+    simple_intra_sv = intra_sv[['chrom1', 'bp1', 'bp2', 'donor_id']].rename(
+        columns={'chrom1': 'chr'}
+    )
+    simple_intra_sv.to_csv(csvspath + r'/simple_intra_sv.csv', index=False)
+
+
 def main():
     build_sv_with_donor_csv()
+    build_simplified_sv()
 
 
 if __name__ == '__main__':
