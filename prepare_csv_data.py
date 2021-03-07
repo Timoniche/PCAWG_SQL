@@ -1,24 +1,30 @@
+import errno
 import os
 import sys
 import glob
+import time
+
 import pandas as pd
 
 script_dir = os.path.abspath(os.path.dirname(sys.argv[0]) or '.')
 datapath = script_dir + r'/data'
-csvspath = script_dir + r'/csvs'
+bedpe_icgc = datapath + r'/icgc/open'
+bedpe_tcga = datapath + r'/tcga/open'
+csvspath_icgc = script_dir + r'/csvs_icgc'
+csvspath_tcga = script_dir + r'/csvs_tcga'
 
 
 # filehashes_donorid.csv consists 'tumor_wgs_aliquot_id' column with comma-separated file hashes
-def build_donors_csvs():
+def build_donors_csvs(csvspath):
     donors_excel = pd.read_excel(datapath + r'/pcawg-data-releases.xlsx')
     donors_excel.to_csv(csvspath + r'/donors.csv', index=False)
     projection = ['tumor_wgs_aliquot_id', 'submitter_donor_id']
     donors_excel.to_csv(csvspath + r'/filehashes_donorid.csv', index=False, columns=projection)
 
 
-def build_filehash_donorid_map():
+def build_filehash_donorid_map(csvspath):
     if not os.path.exists(csvspath + r'/filehashes_donorid.csv'):
-        build_donors_csvs()
+        build_donors_csvs(csvspath)
     filehashes_donorid_csv = pd.read_csv(csvspath + r'/filehashes_donorid.csv')
     filehash_donorid_map = {}
     for idx, row in filehashes_donorid_csv.iterrows():
@@ -28,9 +34,9 @@ def build_filehash_donorid_map():
     return filehash_donorid_map
 
 
-def build_sv_with_donor_csv():
-    filehash_donorid_map = build_filehash_donorid_map()
-    os.chdir(datapath + r'/icgc/open')
+def build_sv_with_donor_csv(csvspath, bedpepath):
+    filehash_donorid_map = build_filehash_donorid_map(csvspath)
+    os.chdir(bedpepath)
     csvs = []
     for file in glob.glob('*.gz'):
         file_hash_prefix = file.split(sep='.')[0]
@@ -42,7 +48,7 @@ def build_sv_with_donor_csv():
     sv_donor_csv.to_csv(csvspath + r'/sv_donor.csv', index=False)
 
 
-def build_simplified_sv():
+def build_simplified_sv(csvspath):
     # from .bedpe doc (start, end]
     projection = ['chrom1', 'end1', 'chrom2', 'end2', 'donor_id']
     simplified_csv = pd.read_csv(csvspath + '/sv_donor.csv', usecols=projection)
@@ -57,9 +63,23 @@ def build_simplified_sv():
     simple_intra_sv.to_csv(csvspath + r'/simple_intra_sv.csv', index=False)
 
 
+def create_dir(dirpath):
+    if not os.path.exists(os.path.dirname(dirpath)):
+        try:
+            os.makedirs(os.path.dirname(dirpath))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
+
 def main():
-    build_sv_with_donor_csv()
-    build_simplified_sv()
+    t1 = time.time()
+    create_dir(csvspath_icgc + '/')
+    create_dir(csvspath_tcga + '/')
+    build_sv_with_donor_csv(csvspath_icgc, bedpe_icgc)
+    build_simplified_sv(csvspath_icgc)
+    t2 = time.time()
+    print(f'took {t2 - t1} sec')
 
 
 if __name__ == '__main__':
