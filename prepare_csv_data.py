@@ -7,11 +7,10 @@ import time
 import pandas as pd
 
 script_dir = os.path.abspath(os.path.dirname(sys.argv[0]) or '.')
+resource = 'icgc'  # 'tcga'
 datapath = script_dir + r'/data'
-bedpe_icgc = datapath + r'/icgc/open'
-bedpe_tcga = datapath + r'/tcga/open'
-csvspath_icgc = script_dir + r'/csvs_icgc'
-csvspath_tcga = script_dir + r'/csvs_tcga'
+bedpe_ = datapath + fr'/{resource}/open'
+csvspath_ = script_dir + fr'/csvs_{resource}'
 
 
 # filehashes_donorid.csv consists 'tumor_wgs_aliquot_id' column with comma-separated file hashes
@@ -63,6 +62,11 @@ def build_simplified_sv(csvspath):
     simple_intra_sv.to_csv(csvspath + r'/simple_intra_sv.csv', index=False)
 
 
+def build_tumour_type_csv(csvspath):
+    donor_tumour = pd.read_excel(datapath + r'/pcawg_specimen_histology_August2016_v9.xlsx')
+    donor_tumour.to_csv(csvspath + r'/donor_tumour.csv', index=False)
+
+
 def create_dir(dirpath):
     if not os.path.exists(os.path.dirname(dirpath)):
         try:
@@ -74,10 +78,10 @@ def create_dir(dirpath):
 
 def main():
     t1 = time.time()
-    create_dir(csvspath_icgc + '/')
-    create_dir(csvspath_tcga + '/')
-    build_sv_with_donor_csv(csvspath_icgc, bedpe_icgc)
-    build_simplified_sv(csvspath_icgc)
+    create_dir(csvspath_ + '/')
+    build_tumour_type_csv(csvspath_)
+    build_sv_with_donor_csv(csvspath_, bedpe_)
+    build_simplified_sv(csvspath_)
     t2 = time.time()
     print(f'took {t2 - t1} sec')
 

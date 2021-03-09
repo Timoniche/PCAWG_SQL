@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 import pandas as pd
 
 script_dir = os.path.abspath(os.path.dirname(sys.argv[0]) or '.')
-datapath = script_dir + r'/data'
-csvspath = script_dir + r'/csvs'
+resource = 'icgc'  # 'tcga'
+csvspath = script_dir + fr'/csvs_{resource}'
 
 
 def save_to_sql():
@@ -22,6 +22,9 @@ def save_to_sql():
     if not engine.has_table('sv_intra'):
         sv_intra = pd.read_csv(csvspath + '/simple_intra_sv.csv')
         sv_intra.to_sql('sv_intra', engine, index=False)
+    if not engine.has_table('donor_tumour'):
+        donor_tumour = pd.read_csv(csvspath + '/donor_tumour.csv')
+        donor_tumour.to_sql('donor_tumour', engine, index=False)
 
 
 def main():
