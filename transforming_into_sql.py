@@ -25,6 +25,9 @@ def save_to_sql():
     if not engine.has_table('donor_tumour'):
         donor_tumour = pd.read_csv(csvspath + '/donor_tumour.csv')
         donor_tumour.to_sql('donor_tumour', engine, index=False)
+    if not engine.has_table('chromo'):
+        chromo = pd.read_csv(csvspath + '/prostate_id_chromo.csv')
+        chromo.to_sql('chromo', engine, index=False)
 
 
 def main():
